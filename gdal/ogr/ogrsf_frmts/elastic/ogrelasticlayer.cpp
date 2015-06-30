@@ -155,6 +155,7 @@ CPLString OGRElasticLayer::BuildMap() {
     json_object *properties = json_object_new_object();
 
     json_object *Feature = AppendGroup(map, "FeatureCollection");
+    json_object_object_add(Feature, "geom", AddPropertyMap("string"));
     json_object_object_add(Feature, "type", AddPropertyMap("string"));
     json_object_object_add(Feature, "properties", properties);
     if (pAttributes) json_object_object_add(properties, "properties", (json_object *) pAttributes);
@@ -206,6 +207,21 @@ OGRErr OGRElasticLayer::ICreateFeature(OGRFeature *poFeature) {
 	if (!poFeature->GetGeometryRef()) {
 		return OGRERR_FAILURE;
 	}
+
+    json_object *fieldObject = json_object_new_object();
+    json_object *properties = json_object_new_object();
+
+    OGRGeometry *geom = poFeature->GetGeometryRef();
+    char *geomStr = geom->exportToJson();
+    if (geomStr != NULL) {
+    	json_object_object_add(fieldObject, "geom", json_object_new_string(geomStr));
+	CPLFree(geomStr);
+    }
+
+    json_object_object_add(fieldObject, "properties", properties);
+
+    /* replace this code to return a string object with a JSON geometry */
+    /*
     poFeature->GetGeometryRef()->getEnvelope(&env);
 
     json_object *fieldObject = json_object_new_object();
@@ -220,6 +236,9 @@ OGRErr OGRElasticLayer::ICreateFeature(OGRFeature *poFeature) {
     json_object_array_add(coordinates, json_object_new_double((env.MaxY + env.MinY)*0.5));
     json_object_object_add(fieldObject, "type", json_object_new_string("Feature"));
     json_object_object_add(fieldObject, "properties", properties);
+    */
+    /* end replace */
+
 
     // For every field that
     int fieldCount = poFeatureDefn->GetFieldCount();
